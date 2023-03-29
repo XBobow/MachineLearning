@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 
 # 导入数据集
+#`load_boston` has been removed from scikit-learn since version 1.2.
 data_url = "http://lib.stat.cmu.edu/datasets/boston"
 raw_df = pd.read_csv(data_url, sep="\\s+", skiprows=22, header=None)
 data = np.hstack([raw_df.values[::2, :], raw_df.values[1::2, :2]])
@@ -30,13 +31,12 @@ target = raw_df.values[1::2, 2]
 #  B        1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town
 #  LSTAT    % lower status of the population
 #  MEDV     Median value of owner-occupied homes in $1000's
-# feature = ["CRIM","ZN","INDUS","CHAS","NOX","RM","AGE","DIS","RAD","TAX","PTRATIO","B","LSTAT","MEDV"]
+feature = ["CRIM","ZN","INDUS","CHAS","NOX","RM","AGE","DIS","RAD","TAX","PTRATIO","B","LSTAT","MEDV"] #MEDV是价值
 # for i in range(13):
 #     plt.figure(figsize=(10, 7))
 #     plt.grid()
 #     plt.scatter(data[:, i], target, s=5)
 #     plt.title(feature[i])
-#     # print(feature[i],np.corrcoef(data[:i]),target)
 # plt.show()
 
 # 数据归一化
@@ -46,32 +46,29 @@ scaler.fit(data)
 data = scaler.transform(data)
 
 # 数据划分
-kf = KFold(n_splits=5)
+# kf = KFold(n_splits=5)
 kf = KFold(n_splits=10)
 n = kf.get_n_splits(data, target)
-# for i, (train_index, test_index) in enumerate(kf.split(data,target)):
-#     print(f"Fold {i}:")
-#     print(f"  Train: index={train_index}")
-#     print(f"  Test:  index={test_index}")
+
 for train_index, test_index in kf.split(data, target):
     train_data = data[train_index]
     train_target = target[train_index]
     test_data = data[test_index]
     test_target = target[test_index]
 
-# 模型训练
-reg = LinearRegression()
-reg.fit(train_data, train_target)
-# reg.score(train_data, train_target)
-# reg.coef_
-# print(reg.predict(test_data))
+    # 模型训练
+    reg = LinearRegression()
+    reg = SGDRegressor()
+    reg.fit(train_data, train_target)
 
 # 模型评估
-score = cross_val_score(reg,train_data,train_target,cv=kf,scoring="neg_mean_squared_error").mean()
-score = cross_val_score(reg,train_data,train_target,cv=kf,scoring="neg_mean_absolute_error").mean()
-print(-score)
-
-# pre = reg.predict(test_data)
-# error = mean_squared_error(test_target, pre)
-# error = mean_absolute_error(test_target,pre)
-# print(error)
+#交叉验证
+score = cross_val_score(reg,train_data,train_target,cv=kf).mean()
+print("交叉验证:{}".format(score))
+#平均绝对误差
+pre = reg.predict(test_data)
+error = mean_squared_error(test_target, pre)
+print("平均绝对误差:{}".format(error))
+#均方差
+error = mean_absolute_error(test_target,pre)
+print("均方差:{}".format(error))
